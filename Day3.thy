@@ -46,33 +46,38 @@ definition epsilon_rate :: "string list => nat" where
   (let counted_bits = map count_bits transposed in
   to_nat (map min_bit counted_bits))))"
 
-value "transpose [[1,0,1], [0,0,1::nat]]"
-
 definition bit_crit_ox :: "bit_count \<Rightarrow> nat" where
-"bit_crit_ox bc = (if max (zero bc) (one bc) = (zero bc) then 0 else 1)"
+"bit_crit_ox bc = (if (zero bc) = (one bc) then 1 else 
+  (if max (zero bc) (one bc) = (zero bc) then 0 else 1))"
 
-value "[1,2,3::nat]!1"
-
-value "filter (\<lambda> bits. (bits!0) = 0) [[0, 1, 1, 0::nat], [1, 1, 1, 0]]"
-value "filter (\<lambda> i. i = 0) [0, 1, 0, 2::nat]"
-
-definition filter_by_bit :: "(nat * bit_digits list) \<Rightarrow> nat \<Rightarrow> (nat * bit_digits list)" where
-"filter_by_bit a b =
-  ((fst a), (filter (\<lambda> bits. (bits!(fst a)) = b) (snd a)))"
-
+value "bit_crit_ox \<lparr> zero = 7, one = 0 \<rparr>"
 
 value "map (bit_crit_ox \<circ> count_bits) [[1, 0, 0::nat], [1, 0, 1]]"
-value "foldl filter_by_bit ( [[1,0,1], [0,1,0]]"
-value "[1, 0, 1, 0]"
+value "foldl filter_by_bit (0, [[1,0,1], [0,1,0]]) [1]"
 
-definition oxygen_generator_rating :: "string list \<Rightarrow> bit_digits list" where
-"oxygen_generator_rating bs = 
-  (let digits :: bit_digits list = map to_digits bs in
-  (let transposed = transpose digits in
+fun oxygen_generator_rating_r :: "bit_digits list \<Rightarrow> nat \<Rightarrow> bit_digits list" where
+"oxygen_generator_rating_r bits 0 = bits" |
+"oxygen_generator_rating_r [bits] n = [bits]" |
+"oxygen_generator_rating_r bits n =
+  (let index = length (hd bits) - n in
+  (let transposed = transpose bits in
   (let counted_bits :: nat list = map (bit_crit_ox \<circ> count_bits) transposed in
-  snd (foldl filter_by_bit (0, digits) counted_bits))))"
+  oxygen_generator_rating_r (filter (\<lambda> bs. bs!index = counted_bits!index) bits) (n - 1))))"
 
-value "oxygen_generator_rating [''010'', ''011'', ''101'']"
+definition bit_crit_co2 :: "bit_count \<Rightarrow> nat" where
+"bit_crit_co2 bc = (if (zero bc) = (one bc) then 0 else 
+  (if min (zero bc) (one bc) = (zero bc) then 0 else 1))"
+
+value "bit_crit_co2 \<lparr> zero = 7, one = 7 \<rparr>"
+
+fun co2_scrubber_rating_r :: "bit_digits list \<Rightarrow> nat \<Rightarrow> bit_digits list" where
+"co2_scrubber_rating_r bits 0 = bits" |
+"co2_scrubber_rating_r [bits] n = [bits]" |
+"co2_scrubber_rating_r bits n =
+  (let index = length (hd bits) - n in
+  (let transposed = transpose bits in
+  (let counted_bits :: nat list = map (bit_crit_co2 \<circ> count_bits) transposed in
+  co2_scrubber_rating_r (filter (\<lambda> bs. bs!index = counted_bits!index) bits) (n - 1))))"
 
 definition "small_data \<equiv> [
 ''00100'',
@@ -85,10 +90,29 @@ definition "small_data \<equiv> [
 ''11100'',
 ''10000'',
 ''11001'',
-''00010''
+''00010'',
+''01010''
 ]"
 
-value "oxygen_generator_rating small_data"
+value "map (bit_crit_co2 \<circ> count_bits) (transpose (map to_digits small_data))"
+
+value "
+(let bits = map to_digits small_data in
+(let n = 5 in
+(let index = length (hd bits) - n in
+(let transposed = transpose bits in
+(let counted_bits :: nat list = map (bit_crit_co2 \<circ> count_bits) transposed in
+(filter (\<lambda> bs. bs!index = counted_bits!index) bits))))))" 
+
+value "counted_bits"
+
+value "(
+let digits :: bit_digits list = map to_digits small_data in
+oxygen_generator_rating_r digits (length (hd digits)))"
+
+value "(
+let digits :: bit_digits list = map to_digits small_data in
+co2_scrubber_rating_r digits (length (hd digits)))"
 
 definition "data \<equiv> [
 ''000011001000'',
@@ -1098,4 +1122,15 @@ value "epsilon_rate data"
 
 value "gamma_rate [''0101'', ''1011'', ''1111'']"
 value "epsilon_rate [''0101'', ''1011'', ''1111'']"
+
+value "(
+let digits :: bit_digits list = map to_digits data in
+oxygen_generator_rating_r digits (length (hd digits)))"
+
+value "(
+let digits :: bit_digits list = map to_digits data in
+co2_scrubber_rating_r digits (length (hd digits)))"
+
+value "to_nat [0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1]"
+value "to_nat [1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1]"
 end
