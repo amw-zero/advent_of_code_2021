@@ -1,0 +1,1 @@
+0.upto(data.max).map { |p| { dest: p, sum: data.product([p]).map { |a, b| 1.upto((a - b).abs).sum }.sum } }.min_by { |h| h[:sum] }
